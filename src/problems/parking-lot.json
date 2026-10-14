@@ -1,0 +1,276 @@
+{
+  "id": "parking-lot",
+  "title": "Parking Lot",
+  "difficulty": "easy",
+  "description": "Design the software for a multi-floor parking lot. Vehicles of different types arrive at an entry gate, are assigned a suitable spot, receive a ticket, and pay on exit based on how long they stayed. Focus on the object model: which classes exist, what each one is responsible for, and where behaviour is likely to change over time.",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "The lot has multiple floors, and each floor has spots of different sizes (motorcycle, compact, large).",
+      "keywords": [
+        "floor",
+        "level",
+        "spot",
+        "slot",
+        "spot type",
+        "size",
+        "compact",
+        "large",
+        "motorcycle"
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "On entry, the system assigns a free spot that fits the vehicle type, or rejects the vehicle when no suitable spot is free.",
+      "keywords": [
+        "park",
+        "assign",
+        "allocate",
+        "find spot",
+        "free spot",
+        "available",
+        "fits",
+        "full",
+        "reject"
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "A ticket is issued on entry, recording the vehicle, the assigned spot and the entry time.",
+      "keywords": [
+        "ticket",
+        "issue",
+        "entry time",
+        "timestamp",
+        "check in"
+      ]
+    },
+    {
+      "id": "R4",
+      "text": "On exit, the fee is calculated from the parking duration and the spot type. Pricing rules change often (weekend rates, EV surcharge).",
+      "keywords": [
+        "fee",
+        "price",
+        "pricing",
+        "rate",
+        "charge",
+        "duration",
+        "hour",
+        "calculate",
+        "cost"
+      ]
+    },
+    {
+      "id": "R5",
+      "text": "The driver can pay by cash, card or UPI, and new payment methods will be added later.",
+      "keywords": [
+        "pay",
+        "payment",
+        "cash",
+        "card",
+        "upi",
+        "receipt"
+      ]
+    },
+    {
+      "id": "R6",
+      "text": "A display board at the entrance shows how many free spots of each type remain on each floor, updated in real time.",
+      "keywords": [
+        "display",
+        "board",
+        "availability",
+        "free spots",
+        "count",
+        "notify",
+        "update"
+      ]
+    },
+    {
+      "id": "R7",
+      "text": "Several entry and exit gates operate at the same time, and the same spot must never be assigned to two vehicles.",
+      "keywords": [
+        "concurrent",
+        "concurrency",
+        "lock",
+        "mutex",
+        "synchronized",
+        "thread",
+        "atomic",
+        "race condition",
+        "double assign"
+      ]
+    }
+  ],
+  "constraints": [
+    "Up to 5 floors with up to 200 spots each.",
+    "Several entry and exit gates work concurrently.",
+    "A vehicle may use a spot of its size or larger, never a smaller one.",
+    "Fees are charged per started hour, and rates differ by spot type.",
+    "Model the in-memory domain only: no database schema, UI or gate hardware drivers."
+  ],
+  "clarifyingQuestions": [
+    "Which vehicle types must be supported, and may a small vehicle take a larger spot when its own size is full?",
+    "How is the fee calculated: flat, hourly, or different per vehicle and spot type? How often will pricing rules change?",
+    "What should happen when no suitable spot is free: reject at the gate, or queue?",
+    "How many entry and exit gates are there, and can two gates try to assign the same spot at the same moment?",
+    "Are reservations, monthly passes or EV charging in scope for this version?"
+  ],
+  "rubric": {
+    "concepts": [
+      {
+        "id": "vehicle",
+        "name": "Vehicle types",
+        "aliases": [
+          "Vehicle",
+          "VehicleType",
+          "Car",
+          "Truck",
+          "Motorcycle",
+          "Motorbike",
+          "Bike",
+          "Van"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R2"
+        ],
+        "suggestedPatterns": [],
+        "why": "Spot fit depends on the vehicle type. Model it explicitly (an enum or a small hierarchy) instead of passing strings around."
+      },
+      {
+        "id": "parking-spot",
+        "name": "Parking spot with a size/type",
+        "aliases": [
+          "ParkingSpot",
+          "Spot",
+          "ParkingSlot",
+          "Slot",
+          "ParkingSpace",
+          "Space",
+          "SpotType",
+          "SpotSize"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R1",
+          "R2"
+        ],
+        "suggestedPatterns": [],
+        "why": "The spot is the unit being allocated. It should own its size and occupancy, so 'is this spot free and does it fit?' is answered in one place."
+      },
+      {
+        "id": "lot-structure",
+        "name": "Lot and floor structure",
+        "aliases": [
+          "ParkingLot",
+          "ParkingFloor",
+          "Floor",
+          "Level",
+          "ParkingLevel",
+          "ParkingGarage",
+          "Garage",
+          "ParkingBuilding"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R1"
+        ],
+        "suggestedPatterns": [],
+        "why": "Floors group spots and keep per-floor availability counts. The lot is the entry point that coordinates floors, gates and tickets but should delegate the actual work."
+      },
+      {
+        "id": "spot-allocation",
+        "name": "Spot allocation strategy",
+        "aliases": [
+          "ParkingStrategy",
+          "SpotAllocationStrategy",
+          "AllocationStrategy",
+          "SpotAllocator",
+          "Allocator",
+          "SpotAssigner",
+          "SpotAssignmentStrategy",
+          "AllocationPolicy",
+          "SpotFinder",
+          "SpotSelector",
+          "SpotSelectionStrategy",
+          "SpotStrategy",
+          "ParkingAssignmentStrategy"
+        ],
+        "expectAbstraction": true,
+        "requirementIds": [
+          "R2"
+        ],
+        "suggestedPatterns": [
+          "Strategy"
+        ],
+        "why": "How a spot is chosen varies (nearest to the gate, fill lowest floor first, smallest fitting spot, EV first). Put it behind an interface so policies can be swapped without editing the lot."
+      },
+      {
+        "id": "ticket",
+        "name": "Parking ticket",
+        "aliases": [
+          "Ticket",
+          "ParkingTicket",
+          "EntryTicket",
+          "ParkingSession",
+          "ParkingRecord"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R3"
+        ],
+        "suggestedPatterns": [],
+        "why": "The ticket links vehicle, spot and entry time. It is the input to fee calculation on exit, so it should hold everything pricing needs."
+      },
+      {
+        "id": "pricing",
+        "name": "Pricing / fee calculation strategy",
+        "aliases": [
+          "PricingStrategy",
+          "Pricing",
+          "PricingPolicy",
+          "PricingRule",
+          "FeeCalculator",
+          "FeeStrategy",
+          "FeeCalculationStrategy",
+          "FeeModel",
+          "Fee",
+          "RateCalculator",
+          "PriceCalculator",
+          "ChargeCalculator",
+          "Tariff"
+        ],
+        "expectAbstraction": true,
+        "requirementIds": [
+          "R4"
+        ],
+        "suggestedPatterns": [
+          "Strategy"
+        ],
+        "why": "Pricing rules change often (hourly, weekend, EV surcharge). An interface with one implementation per rule keeps those changes out of the lot and the ticket."
+      },
+      {
+        "id": "payment",
+        "name": "Payment method abstraction",
+        "aliases": [
+          "Payment",
+          "PaymentMethod",
+          "PaymentStrategy",
+          "PaymentProcessor",
+          "PaymentGateway",
+          "PaymentService",
+          "PaymentHandler",
+          "PaymentMode"
+        ],
+        "expectAbstraction": true,
+        "requirementIds": [
+          "R5"
+        ],
+        "suggestedPatterns": [
+          "Strategy"
+        ],
+        "why": "Cash, card and UPI share one operation (pay an amount) but differ in how. A payment interface lets new methods be added without touching exit logic."
+      }
+    ]
+  }
+}

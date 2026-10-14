@@ -1,0 +1,281 @@
+{
+  "id": "vending-machine",
+  "title": "Vending Machine",
+  "difficulty": "medium",
+  "description": "Design a vending machine that sells products from numbered slots. A customer selects a product, inserts money, and receives the product and change, or cancels and gets a refund. The machine behaves differently depending on its current state, and an operator restocks it. Focus on state handling, money handling, and keeping the machine class from doing everything.",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "Products are stored in slots identified by a code (e.g. A1), each with a price and a quantity.",
+      "keywords": [
+        "product",
+        "item",
+        "slot",
+        "rack",
+        "shelf",
+        "inventory",
+        "stock",
+        "quantity",
+        "code"
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "The customer selects a product by code. The machine shows its price and rejects codes that are invalid or sold out.",
+      "keywords": [
+        "select",
+        "selection",
+        "choose",
+        "code",
+        "price",
+        "sold out",
+        "out of stock",
+        "invalid code"
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "The machine accepts coins and notes of supported denominations, rejects others, and tracks the inserted amount. Card payment will be added later.",
+      "keywords": [
+        "coin",
+        "note",
+        "insert",
+        "denomination",
+        "balance",
+        "amount",
+        "money",
+        "cash",
+        "card",
+        "payment"
+      ]
+    },
+    {
+      "id": "R4",
+      "text": "When enough money is inserted, the machine dispenses the product and returns change. If it cannot make exact change, it refunds the money and cancels the sale.",
+      "keywords": [
+        "dispense",
+        "change",
+        "return change",
+        "refund",
+        "exact change"
+      ]
+    },
+    {
+      "id": "R5",
+      "text": "The customer can cancel at any time before dispensing and gets all inserted money back.",
+      "keywords": [
+        "cancel",
+        "refund",
+        "abort",
+        "return money"
+      ]
+    },
+    {
+      "id": "R6",
+      "text": "Allowed actions depend on the machine's state (idle, has money, dispensing, out of service); actions not allowed in the current state are rejected.",
+      "keywords": [
+        "state",
+        "idle",
+        "ready",
+        "has money",
+        "dispensing",
+        "out of service",
+        "transition"
+      ]
+    },
+    {
+      "id": "R7",
+      "text": "An operator can restock products, update prices and collect cash, with the machine out of service while doing so.",
+      "keywords": [
+        "restock",
+        "refill",
+        "operator",
+        "admin",
+        "maintenance",
+        "collect",
+        "update price"
+      ]
+    }
+  ],
+  "constraints": [
+    "One machine serving one customer at a time.",
+    "The machine holds a finite number of coins for giving change.",
+    "Prices and money are integers in the smallest currency unit, to avoid floating-point errors.",
+    "Up to 40 slots; each slot holds a single product type.",
+    "Model the domain only: no hardware drivers or UI."
+  ],
+  "clarifyingQuestions": [
+    "Which payment methods must work now (coins, notes, card), and which are planned for later?",
+    "What should happen if the machine cannot give exact change for a purchase?",
+    "Does the customer insert money first or select a product first? Can they buy several items in one session?",
+    "What happens to inserted money if the customer cancels, or the selected product turns out to be sold out?",
+    "Who restocks the machine and collects cash, and can customers use it while that happens?"
+  ],
+  "rubric": {
+    "concepts": [
+      {
+        "id": "machine-state",
+        "name": "Machine state abstraction",
+        "aliases": [
+          "VendingMachineState",
+          "MachineState",
+          "State",
+          "VendingState",
+          "IdleState",
+          "ReadyState",
+          "HasMoneyState",
+          "HasCoinState",
+          "SelectionState",
+          "ProductSelectedState",
+          "DispensingState",
+          "DispenseState",
+          "SoldOutState",
+          "OutOfServiceState",
+          "MaintenanceState"
+        ],
+        "expectAbstraction": true,
+        "requirementIds": [
+          "R6"
+        ],
+        "suggestedPatterns": [
+          "State"
+        ],
+        "why": "Every action (insert money, select, cancel, dispense) behaves differently per state. A State interface with one class per state removes the large switch statements and makes invalid actions explicit per state."
+      },
+      {
+        "id": "vending-machine",
+        "name": "Vending machine context",
+        "aliases": [
+          "VendingMachine",
+          "Machine",
+          "VendingMachineContext",
+          "VendingController",
+          "VendingMachineController"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R2"
+        ],
+        "suggestedPatterns": [
+          "Singleton"
+        ],
+        "why": "The machine is the entry point the customer talks to. It should hold the current state and delegate to it, the inventory and the cash handling, not do all the work itself."
+      },
+      {
+        "id": "inventory",
+        "name": "Inventory and slots",
+        "aliases": [
+          "Inventory",
+          "InventoryManager",
+          "InventoryService",
+          "Stock",
+          "StockManager",
+          "Slot",
+          "ProductSlot",
+          "Rack",
+          "Shelf",
+          "ItemShelf",
+          "Tray",
+          "Compartment"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R1",
+          "R2"
+        ],
+        "suggestedPatterns": [],
+        "why": "Mapping codes to products and quantities, checking availability and restocking belong together and away from payment logic."
+      },
+      {
+        "id": "product",
+        "name": "Product",
+        "aliases": [
+          "Product",
+          "Item",
+          "Snack",
+          "Drink",
+          "Beverage"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R1"
+        ],
+        "suggestedPatterns": [],
+        "why": "A product has a name and price independent of where it is stocked. Keeping it separate from the slot lets one product be stocked in several slots."
+      },
+      {
+        "id": "money",
+        "name": "Money / denominations",
+        "aliases": [
+          "Coin",
+          "Note",
+          "Banknote",
+          "Denomination",
+          "Currency",
+          "Money",
+          "Cash",
+          "CoinType",
+          "NoteType"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R3"
+        ],
+        "suggestedPatterns": [],
+        "why": "Accepted denominations should be an explicit type (usually an enum with integer values) so invalid coins are rejected in one place and amounts avoid floating point."
+      },
+      {
+        "id": "change-handling",
+        "name": "Change calculation and cash holdings",
+        "aliases": [
+          "ChangeCalculator",
+          "ChangeMaker",
+          "ChangeDispenser",
+          "ChangeStrategy",
+          "ChangeService",
+          "CashRegister",
+          "CashBox",
+          "CoinBank",
+          "CoinInventory",
+          "CoinStore",
+          "MoneyBox",
+          "Till",
+          "Wallet"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R4"
+        ],
+        "suggestedPatterns": [
+          "Strategy",
+          "Chain of Responsibility"
+        ],
+        "why": "Making change from a finite coin stock is a real algorithm, and greedy can fail. It deserves its own class that knows the machine's coins and can say 'cannot make change' before the product is dispensed."
+      },
+      {
+        "id": "payment-method",
+        "name": "Payment method abstraction",
+        "aliases": [
+          "PaymentMethod",
+          "PaymentStrategy",
+          "PaymentProcessor",
+          "PaymentHandler",
+          "Payment",
+          "PaymentService",
+          "CoinAcceptor",
+          "CashPayment",
+          "CardPayment",
+          "MoneyAcceptor"
+        ],
+        "expectAbstraction": true,
+        "requirementIds": [
+          "R3"
+        ],
+        "suggestedPatterns": [
+          "Strategy"
+        ],
+        "why": "Card payment is coming. If accepting money is behind an interface (cash now, card later), adding it will not touch the states or the machine."
+      }
+    ]
+  }
+}

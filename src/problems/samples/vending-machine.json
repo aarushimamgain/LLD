@@ -1,0 +1,72 @@
+{
+  "entities": [
+    {
+      "name": "VendingMachine",
+      "kind": "class",
+      "responsibilities": [
+        "Accept coins and track the balance",
+        "Let the customer select a product by code",
+        "Check stock and price",
+        "Dispense the product and return change",
+        "Handle cancel",
+        "Switch between states"
+      ],
+      "methods": ["insertCoin(coin)", "selectProduct(code)", "cancel()", "dispense()"]
+    },
+    {
+      "name": "MachineState",
+      "kind": "enum",
+      "responsibilities": ["List machine states: IDLE, HAS_MONEY, DISPENSING, OUT_OF_SERVICE"],
+      "methods": []
+    },
+    {
+      "name": "Inventory",
+      "kind": "class",
+      "responsibilities": ["Map slot codes to products and quantities", "Decrease stock after a sale"],
+      "methods": ["getProduct(code): Product", "isAvailable(code): boolean", "decrement(code)"]
+    },
+    {
+      "name": "Product",
+      "kind": "class",
+      "responsibilities": ["Hold the name and price in cents"],
+      "methods": ["getPrice(): int"]
+    },
+    {
+      "name": "Coin",
+      "kind": "enum",
+      "responsibilities": ["Supported coins with their value in cents"],
+      "methods": ["getValue(): int"]
+    },
+    {
+      "name": "ChangeCalculator",
+      "kind": "class",
+      "responsibilities": ["Work out which coins to return, largest first"],
+      "methods": ["calculate(amount): List<Coin>"]
+    },
+    {
+      "name": "Display",
+      "kind": "class",
+      "responsibilities": ["Show the price, balance and messages to the customer"],
+      "methods": ["show(message)"]
+    }
+  ],
+  "relationships": [
+    { "from": "VendingMachine", "to": "Inventory", "type": "has-a", "cardinality": "1" },
+    { "from": "Inventory", "to": "Product", "type": "has-a", "cardinality": "0..*" },
+    { "from": "VendingMachine", "to": "MachineState", "type": "has-a", "cardinality": "1" },
+    { "from": "VendingMachine", "to": "ChangeCalculator", "type": "uses" },
+    { "from": "VendingMachine", "to": "Coin", "type": "uses" },
+    { "from": "ChangeCalculator", "to": "Coin", "type": "uses" }
+  ],
+  "patterns": [
+    {
+      "name": "State",
+      "where": "VendingMachine",
+      "why": "The machine behaves differently depending on whether money has been inserted."
+    },
+    { "name": "Singleton", "where": "VendingMachine", "why": "" }
+  ],
+  "keyFlows": "Buy: insertCoin() adds to the balance and moves IDLE -> HAS_MONEY. selectProduct(code) checks the Inventory; if the balance covers the price, dispense() releases the product, decrements stock, returns change from ChangeCalculator and goes back to IDLE.\nCancel: cancel() refunds the balance and returns to IDLE.",
+  "tradeOffs": "Used an enum for states to keep it simple.",
+  "assumptions": "Only coins are accepted. There are always enough coins to give change."
+}

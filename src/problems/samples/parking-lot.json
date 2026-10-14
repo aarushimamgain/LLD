@@ -1,0 +1,107 @@
+{
+  "entities": [
+    {
+      "name": "ParkingLot",
+      "kind": "class",
+      "responsibilities": [
+        "Hold all floors",
+        "Assign spots to vehicles on entry",
+        "Issue tickets and track active tickets",
+        "Compute fees on exit",
+        "Update the display board",
+        "Track which gates are open"
+      ],
+      "methods": ["parkVehicle(vehicle): Ticket", "unparkVehicle(ticket): int", "getFreeSpotCount(type): int"]
+    },
+    {
+      "name": "ParkingFloor",
+      "kind": "class",
+      "responsibilities": ["Hold the spots on one floor", "Count free spots per spot type"],
+      "methods": ["findFreeSpot(type): ParkingSpot", "freeCount(type): int"]
+    },
+    {
+      "name": "ParkingSpot",
+      "kind": "class",
+      "responsibilities": ["Know its size and whether it is occupied"],
+      "methods": ["isFree(): boolean", "assign(vehicle)", "release()"]
+    },
+    {
+      "name": "SpotType",
+      "kind": "enum",
+      "responsibilities": ["List spot sizes: MOTORCYCLE, COMPACT, LARGE"],
+      "methods": []
+    },
+    {
+      "name": "Vehicle",
+      "kind": "abstract",
+      "responsibilities": ["Expose the licence plate and the spot size it needs"],
+      "methods": ["getRequiredSpotType(): SpotType"]
+    },
+    {
+      "name": "Car",
+      "kind": "class",
+      "responsibilities": ["Need a COMPACT spot"],
+      "methods": ["getRequiredSpotType(): SpotType"]
+    },
+    {
+      "name": "Motorcycle",
+      "kind": "class",
+      "responsibilities": ["Need a MOTORCYCLE spot"],
+      "methods": ["getRequiredSpotType(): SpotType"]
+    },
+    {
+      "name": "Ticket",
+      "kind": "class",
+      "responsibilities": ["Record vehicle, spot and entry time"],
+      "methods": ["getEntryTime(): Instant"]
+    },
+    {
+      "name": "SpotAllocator",
+      "kind": "class",
+      "responsibilities": ["Find the first free spot that fits the vehicle, lowest floor first"],
+      "methods": ["allocate(vehicle): ParkingSpot"]
+    },
+    {
+      "name": "PricingStrategy",
+      "kind": "interface",
+      "responsibilities": ["Calculate the fee for a ticket"],
+      "methods": ["calculateFee(ticket, exitTime): int"]
+    },
+    {
+      "name": "HourlyPricing",
+      "kind": "class",
+      "responsibilities": ["Charge per started hour with a rate per spot type"],
+      "methods": ["calculateFee(ticket, exitTime): int"]
+    },
+    {
+      "name": "DisplayBoard",
+      "kind": "class",
+      "responsibilities": ["Show free spots per floor"],
+      "methods": ["refresh()"]
+    }
+  ],
+  "relationships": [
+    { "from": "ParkingLot", "to": "ParkingFloor", "type": "has-a", "cardinality": "1..*" },
+    { "from": "ParkingFloor", "to": "ParkingSpot", "type": "has-a" },
+    { "from": "ParkingSpot", "to": "SpotType", "type": "has-a", "cardinality": "1" },
+    { "from": "Car", "to": "Vehicle", "type": "is-a" },
+    { "from": "Motorcycle", "to": "Vehicle", "type": "is-a" },
+    { "from": "Ticket", "to": "Vehicle", "type": "has-a", "cardinality": "1" },
+    { "from": "Ticket", "to": "ParkingSpot", "type": "has-a", "cardinality": "1" },
+    { "from": "ParkingLot", "to": "SpotAllocator", "type": "uses" },
+    { "from": "ParkingLot", "to": "PricingStrategy", "type": "uses" },
+    { "from": "HourlyPricing", "to": "PricingStrategy", "type": "implements" },
+    { "from": "ParkingLot", "to": "PaymentService", "type": "uses" }
+  ],
+  "patterns": [
+    {
+      "name": "Strategy",
+      "where": "PricingStrategy",
+      "why": "Pricing rules change often (weekend rates, EV surcharge) and should not require editing ParkingLot."
+    },
+    { "name": "Singleton", "where": "ParkingLot", "why": "" }
+  ],
+  "keyFlows": "Park: the entry gate calls ParkingLot.parkVehicle(vehicle) -> SpotAllocator.allocate(vehicle) scans floors for a free spot that fits -> spot.assign(vehicle) -> new Ticket(vehicle, spot, now). If nothing fits, throw LotFullException.\nExit: ParkingLot.unparkVehicle(ticket) -> PricingStrategy.calculateFee(ticket, now) -> spot.release().",
+  "tradeOffs": "Singleton ParkingLot is easy to reach from every gate.",
+  "assumptions": "One vehicle per spot. A vehicle never uses a larger spot than it needs."
+}

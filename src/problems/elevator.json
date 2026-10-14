@@ -1,0 +1,285 @@
+{
+  "id": "elevator",
+  "title": "Elevator System",
+  "difficulty": "hard",
+  "description": "Design the control software for a bank of elevators in one building. Passengers call an elevator from a floor (up/down) and choose a destination inside the car. A controller decides which car serves each call, and each car moves, stops and opens its doors safely. Focus on how cars, requests, states and the dispatch policy fit together.",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "The building has N floors and M elevator cars; every car knows its current floor and direction.",
+      "keywords": [
+        "floor",
+        "building",
+        "car",
+        "elevator",
+        "current floor",
+        "direction",
+        "position"
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "Passengers press an up or down button on a floor (a hall call), and the system assigns a car to serve it.",
+      "keywords": [
+        "hall call",
+        "hall",
+        "call",
+        "request",
+        "up",
+        "down",
+        "button",
+        "assign"
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "Inside a car, passengers select one or more destination floors (car calls).",
+      "keywords": [
+        "destination",
+        "car call",
+        "panel",
+        "select floor",
+        "button",
+        "internal request"
+      ]
+    },
+    {
+      "id": "R4",
+      "text": "A car serves stops in its direction of travel before reversing, opens and closes its doors at each stop, and never moves with its doors open.",
+      "keywords": [
+        "move",
+        "stop",
+        "door",
+        "open",
+        "close",
+        "direction",
+        "idle",
+        "moving",
+        "state",
+        "reverse"
+      ]
+    },
+    {
+      "id": "R5",
+      "text": "The dispatch algorithm (nearest car, least busy, zoning) must be swappable without changing the cars.",
+      "keywords": [
+        "dispatch",
+        "dispatcher",
+        "scheduler",
+        "scheduling",
+        "algorithm",
+        "nearest",
+        "select car",
+        "strategy"
+      ]
+    },
+    {
+      "id": "R6",
+      "text": "Each car has a weight capacity and refuses to move while overloaded.",
+      "keywords": [
+        "capacity",
+        "weight",
+        "load",
+        "overload",
+        "max weight",
+        "overweight"
+      ]
+    },
+    {
+      "id": "R7",
+      "text": "A car can be put into maintenance or emergency mode, in which it stops accepting new requests.",
+      "keywords": [
+        "maintenance",
+        "emergency",
+        "out of service",
+        "alarm",
+        "fire",
+        "disable"
+      ]
+    }
+  ],
+  "constraints": [
+    "Up to 50 floors and 8 cars in a single building.",
+    "All cars serve all floors unless they are in maintenance.",
+    "Time can be simulated in discrete ticks; no real hardware I/O.",
+    "Requests may arrive at any time, including while cars are moving.",
+    "Safety rules (doors closed while moving, no movement when overloaded) must hold in every state."
+  ],
+  "clarifyingQuestions": [
+    "How many floors and cars are there, and do all cars serve every floor?",
+    "What should the dispatcher optimise for: passenger wait time, total travel time, or energy?",
+    "Is the direction (up/down) known when a hall call is made, or does the passenger only press 'call'?",
+    "Should a car serve requests strictly in arrival order, or sweep in one direction first (SCAN/LOOK)?",
+    "What happens to a car's pending requests when it is overloaded or goes into maintenance?"
+  ],
+  "rubric": {
+    "concepts": [
+      {
+        "id": "elevator-car",
+        "name": "Elevator car",
+        "aliases": [
+          "ElevatorCar",
+          "Elevator",
+          "Car",
+          "Lift",
+          "Cabin",
+          "Cab"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R1",
+          "R4"
+        ],
+        "suggestedPatterns": [],
+        "why": "The car owns its current floor, direction, stops and capacity. It should move itself; a controller telling it every step turns the car into a data holder."
+      },
+      {
+        "id": "car-state",
+        "name": "Car state (idle, moving, doors open, maintenance)",
+        "aliases": [
+          "ElevatorState",
+          "CarState",
+          "State",
+          "ElevatorStatus",
+          "CarStatus",
+          "IdleState",
+          "MovingState",
+          "MovingUpState",
+          "MovingDownState",
+          "DoorsOpenState",
+          "MaintenanceState",
+          "Direction"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R4"
+        ],
+        "suggestedPatterns": [
+          "State"
+        ],
+        "why": "What a car may do depends on its state: it must not move with doors open or accept calls in maintenance. Making state explicit (an enum with guarded transitions, or the State pattern) keeps these safety rules in one place."
+      },
+      {
+        "id": "dispatch-strategy",
+        "name": "Dispatch / scheduling strategy",
+        "aliases": [
+          "DispatchStrategy",
+          "Dispatcher",
+          "DispatchPolicy",
+          "DispatchAlgorithm",
+          "SchedulingStrategy",
+          "Scheduler",
+          "SchedulingAlgorithm",
+          "ElevatorScheduler",
+          "ElevatorSelector",
+          "ElevatorSelectionStrategy",
+          "CarSelectionStrategy",
+          "CarSelector",
+          "AssignmentStrategy"
+        ],
+        "expectAbstraction": true,
+        "requirementIds": [
+          "R5"
+        ],
+        "suggestedPatterns": [
+          "Strategy"
+        ],
+        "why": "Choosing which car serves a call is the policy most likely to change (nearest car, least busy, zoning). It should be an interface the controller depends on, not logic inside the controller."
+      },
+      {
+        "id": "controller",
+        "name": "Central controller / elevator system",
+        "aliases": [
+          "ElevatorController",
+          "ElevatorSystem",
+          "ElevatorManager",
+          "ElevatorBank",
+          "ControlSystem",
+          "CentralController",
+          "BuildingController",
+          "Building"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R1",
+          "R2"
+        ],
+        "suggestedPatterns": [
+          "Singleton",
+          "Mediator"
+        ],
+        "why": "Something must receive hall calls and hand them to cars using the dispatch strategy. Keep it a coordinator: if it also moves cars and opens doors, it becomes a god class."
+      },
+      {
+        "id": "request",
+        "name": "Request model (hall call vs car call)",
+        "aliases": [
+          "Request",
+          "ElevatorRequest",
+          "HallCall",
+          "CarCall",
+          "HallRequest",
+          "CarRequest",
+          "ExternalRequest",
+          "InternalRequest",
+          "Call",
+          "FloorRequest"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R2",
+          "R3"
+        ],
+        "suggestedPatterns": [
+          "Command"
+        ],
+        "why": "Hall calls (floor and direction) and car calls (destination) carry different data and are routed differently: one goes to the dispatcher, the other straight to a car. Modelling requests explicitly makes queuing and ordering visible."
+      },
+      {
+        "id": "buttons-panels",
+        "name": "Buttons and panels",
+        "aliases": [
+          "Button",
+          "HallButton",
+          "CarButton",
+          "FloorButton",
+          "ElevatorButton",
+          "Panel",
+          "ButtonPanel",
+          "HallPanel",
+          "CarPanel",
+          "FloorPanel",
+          "InternalPanel",
+          "ExternalPanel"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R2",
+          "R3"
+        ],
+        "suggestedPatterns": [
+          "Command",
+          "Observer"
+        ],
+        "why": "Buttons are where requests originate. Separating hall panels from in-car panels shows which requests go through dispatch and which go directly to a car."
+      },
+      {
+        "id": "door",
+        "name": "Door",
+        "aliases": [
+          "Door",
+          "ElevatorDoor",
+          "CarDoor",
+          "DoorController",
+          "DoorSensor"
+        ],
+        "expectAbstraction": false,
+        "requirementIds": [
+          "R4"
+        ],
+        "suggestedPatterns": [],
+        "why": "Door open/close and its safety interlock with movement is a responsibility of its own. Folding it into the car or controller hides the 'never move with doors open' rule."
+      }
+    ]
+  }
+}

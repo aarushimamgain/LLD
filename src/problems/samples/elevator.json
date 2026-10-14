@@ -1,0 +1,72 @@
+{
+  "entities": [
+    {
+      "name": "ElevatorController",
+      "kind": "class",
+      "responsibilities": [
+        "Receive hall calls from every floor",
+        "Pick the best car for each request",
+        "Move cars between floors and open doors",
+        "Track the position of every car",
+        "Log all trips",
+        "Update the floor indicators"
+      ],
+      "methods": ["requestElevator(floor, direction)", "step()", "moveCar(car)", "openDoors(car)", "getCarPositions(): Map"]
+    },
+    {
+      "name": "ElevatorCar",
+      "kind": "class",
+      "responsibilities": ["Hold its current floor and direction", "Keep a sorted list of stops"],
+      "methods": ["addStop(floor)", "moveOneFloor()", "openDoor()", "closeDoor()", "hasStopAt(floor): boolean"]
+    },
+    {
+      "name": "ElevatorState",
+      "kind": "enum",
+      "responsibilities": ["List car states: IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPEN"],
+      "methods": []
+    },
+    {
+      "name": "Direction",
+      "kind": "enum",
+      "responsibilities": ["UP or DOWN"],
+      "methods": []
+    },
+    {
+      "name": "Request",
+      "kind": "class",
+      "responsibilities": ["Store the source floor, direction and time of a hall call"],
+      "methods": []
+    },
+    {
+      "name": "NearestCarDispatcher",
+      "kind": "class",
+      "responsibilities": ["Choose the car closest to the requested floor that is idle or already moving towards it"],
+      "methods": ["selectCar(cars, request): ElevatorCar"]
+    },
+    {
+      "name": "HallButton",
+      "kind": "class",
+      "responsibilities": ["Light up when pressed and send a hall call"],
+      "methods": ["press()"]
+    }
+  ],
+  "relationships": [
+    { "from": "ElevatorController", "to": "ElevatorCar", "type": "has-a", "cardinality": "1..*" },
+    { "from": "ElevatorController", "to": "NearestCarDispatcher", "type": "uses" },
+    { "from": "ElevatorController", "to": "Request", "type": "has-a", "cardinality": "0..*" },
+    { "from": "ElevatorCar", "to": "ElevatorState", "type": "has-a", "cardinality": "1" },
+    { "from": "ElevatorCar", "to": "Direction", "type": "has-a" },
+    { "from": "NearestCarDispatcher", "to": "ElevatorCar", "type": "uses" }
+  ],
+  "patterns": [
+    {
+      "name": "Strategy",
+      "where": "NearestCarDispatcher",
+      "why": "So we can switch to other dispatch algorithms later."
+    },
+    { "name": "Observer", "where": "FloorDisplay", "why": "" }
+  ],
+  "keyFlows": "Hall call: HallButton.press() -> ElevatorController.requestElevator(floor, dir) -> NearestCarDispatcher.selectCar(cars, request) -> car.addStop(floor).\nEvery tick, ElevatorController.step() moves each car one floor; when a car reaches a stop it opens the door, waits one tick, and closes it.\nCar call: a passenger presses a floor inside the car -> car.addStop(floor).",
+  "tradeOffs": "Nearest-car dispatch is simple but can starve far floors when traffic is heavy.",
+  "assumptions": "All cars serve all floors. Time advances in discrete ticks."
+}
